@@ -1,0 +1,13 @@
+// A modern lightweight build: carbon-fibre wheels and body, titanium legs,
+// wider wheels for soft soil, a bigger array and better insulation.
+{
+  "name": "CFRP + titanium",
+  "description": "Carbon-fibre body and wheels, titanium suspension, wide wheels, extra solar.",
+  "wheels": { "count": 6, "diameter_m": 0.30, "width_m": 0.20, "rim_thickness_mm": 3.0, "grouser_height_mm": 10, "spokes": 8, "material": "cfrp" },
+  "body": { "length_m": 1.1, "width_m": 0.8, "height_m": 0.35, "wall_thickness_mm": 3.0, "ground_clearance_m": 0.32, "material": "cfrp" },
+  "suspension": { "material": "ti6al4v", "strut_diameter_mm": 32, "strut_wall_mm": 1.5, "strut_length_m": 0.35, "track_width_m": 1.30, "wheelbase_m": 1.45 },
+  "drive": { "motor": "bldc_m" },
+  "power": { "battery": "li_ion", "battery_wh": 700, "solar_area_m2": 1.6 },
+  "thermal": { "rhu_count": 8, "box_conductance_w_per_k": 0.25, "heater_max_w": 40, "thermostat_c": -15 },
+  "payload": { "instruments_kg": 30, "avionics_kg": 45 }
+}

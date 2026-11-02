@@ -1,0 +1,14 @@
+// "Make it strong": thick structural steel everywhere.
+// Strength is not the problem. Mass is: it sinks into soft soil, needs huge
+// motors, and plain carbon steel turns brittle in the Martian night.
+{
+  "name": "Steel tank",
+  "description": "Heavy A36 structural steel build with large motors.",
+  "wheels": { "count": 6, "diameter_m": 0.30, "width_m": 0.16, "rim_thickness_mm": 5.0, "grouser_height_mm": 8, "spokes": 8, "material": "a36" },
+  "body": { "length_m": 1.1, "width_m": 0.8, "height_m": 0.40, "wall_thickness_mm": 6.0, "ground_clearance_m": 0.30, "material": "a36" },
+  "suspension": { "material": "a36", "strut_diameter_mm": 60, "strut_wall_mm": 5.0, "strut_length_m": 0.35, "track_width_m": 1.22, "wheelbase_m": 1.41 },
+  "drive": { "motor": "bldc_l" },
+  "power": { "battery": "li_ion", "battery_wh": 800, "solar_area_m2": 1.3 },
+  "thermal": { "rhu_count": 8, "box_conductance_w_per_k": 0.35, "heater_max_w": 40, "thermostat_c": -15 },
+  "payload": { "instruments_kg": 30, "avionics_kg": 45 }
+}

@@ -1,0 +1,29 @@
+// Mission 4 — Dust Storm.
+// Three sols of prospecting, but a regional dust storm rolls in on sol 1.
+// Optical depth climbs to 5: solar power collapses, days get colder, nights
+// warmer. Opportunity fell silent in June 2018 during a planet-encircling storm.
+// Manage energy, keep the battery warm, and still get science home.
+{
+  "name": "04 Dust Storm",
+  "description": "Do science for three sols while a regional dust storm starves the solar array.",
+  "seed": 404,
+  "duration_sols": 3.0,
+  "terrain": {
+    "size_m": 220, "resolution_m": 0.5,
+    "relief_m": 1.8, "feature_m": 26,
+    "random_craters": 3,
+    "drift_fraction": 0.08, "crust_fraction": 0.2,
+    "rock_density_per_m2": 0.03, "boulder_fraction": 0.05
+  },
+  "science": { "random_targets": 26, "orbital_misclassification": 0.3 },
+  "environment": {
+    "latitude_deg": -2.0, "ls_deg": 200, "tau": 0.6, "temp_mean_c": -58, "temp_amplitude_c": 34,
+    "panel_dust_rate_per_sol": 0.004,
+    "dust_storms": [ { "start_sol": 0.2, "ramp_sols": 0.5, "duration_sols": 1.6, "peak_tau": 5.5 } ]
+  },
+  "start": { "x": 110, "y": 110, "heading_deg": 0, "local_hour": 9.0, "battery_soc": 0.7, "box_temp_c": -12 },
+  "comms": {
+    "owlt_min": 18,
+    "relay_passes": [ { "local_hour": 14.5, "minutes": 12, "rate_kbps": 1500 }, { "local_hour": 2.5, "minutes": 10, "rate_kbps": 1500 } ]
+  }
+}

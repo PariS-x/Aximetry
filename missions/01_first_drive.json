@@ -1,0 +1,24 @@
+// Mission 1 — First Drive.
+// Gentle plains, a goal 70 m away, one sol. Learn the controls and watch how
+// far dead reckoning drifts from the truth.
+{
+  "name": "01 First Drive",
+  "description": "Drive to the marked site 70 m away across gentle plains. One sol, light dust.",
+  "seed": 101,
+  "duration_sols": 1.0,
+  "terrain": {
+    "size_m": 100, "resolution_m": 0.5,
+    "relief_m": 1.2, "feature_m": 30,
+    "random_craters": 2,
+    "drift_fraction": 0.06, "crust_fraction": 0.2,
+    "rock_density_per_m2": 0.03, "boulder_fraction": 0.05
+  },
+  "science": { "random_targets": 4, "orbital_misclassification": 0.2 },
+  "environment": { "latitude_deg": -4.6, "ls_deg": 150, "tau": 0.4, "temp_mean_c": -55, "temp_amplitude_c": 33 },
+  "start": { "x": 15, "y": 15, "heading_deg": 40, "local_hour": 9.0, "battery_soc": 0.95 },
+  "goal": { "x": 65, "y": 65, "radius": 3, "bonus": 200 },
+  "comms": {
+    "owlt_min": 12,
+    "relay_passes": [ { "local_hour": 15.5, "minutes": 12, "rate_kbps": 2000 }, { "local_hour": 3.0, "minutes": 10, "rate_kbps": 2000 } ]
+  }
+}

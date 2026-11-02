@@ -1,0 +1,861 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aximetry Mission Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Chakra+Petch:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void: #07080a; --deck: #0e1013; --panel: #121519; --panel2: #171b20; --panel3: #1d2228; --rule: #262c33;
+  --ice: #bfe6ec; --ice-dim: #6f9aa1; --ice-deep: #2b4246;
+  --red: #e2382c; --red-dim: #7c1f19; --red-glow: rgba(226,56,44,.35);
+  --blue: #3f7fd9; --amber: #e8a33a; --text: #e8eef0; --muted: #8a979b;
+  --mono: "Share Tech Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --disp: "Chakra Petch", "Share Tech Mono", ui-monospace, monospace;
+  --cut: 14px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--void); color: var(--text); font: 13px/1.45 var(--mono); }
+body { display: flex; flex-direction: column; height: 100vh; padding: 10px; gap: 8px;
+  background: radial-gradient(1200px 600px at 30% -10%, #12161b 0%, var(--void) 60%); }
+button, input, select { font: inherit; color: inherit; }
+.chamfer { clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut)); }
+.frame { position: relative; background: var(--panel); }
+.frame::before { content: ""; position: absolute; inset: 0; pointer-events: none; border: 1px solid var(--ice-deep); clip-path: inherit; }
+.lbl { font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--ice-dim); }
+h3 { margin: 0; font: 700 12px var(--disp); letter-spacing: .22em; text-transform: uppercase; color: var(--ice); }
+
+/* ---------------- top bar */
+header { display: grid; grid-template-columns: auto 1fr auto; align-items: stretch; }
+.brand { background: var(--ice); color: #0a0d10; padding: 8px 30px 8px 16px; font: 700 20px/1 var(--disp); letter-spacing: .28em;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 0 100%); display: flex; align-items: center; gap: 12px; }
+.brand small { font: 11px var(--mono); letter-spacing: .12em; opacity: .75; }
+.nav { display: flex; align-items: flex-end; gap: 6px; padding: 0 16px; border-bottom: 2px solid var(--ice-deep); }
+.nav button { background: var(--panel2); border: 0; color: var(--muted); padding: 9px 22px 8px; letter-spacing: .2em; cursor: pointer;
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px); }
+.nav button.on { background: var(--ice); color: #0a0d10; }
+.nav button:disabled { opacity: .35; cursor: default; }
+.status { display: flex; align-items: center; gap: 10px; padding: 6px 18px 6px 26px; background: var(--panel2);
+  clip-path: polygon(16px 0, 100% 0, 100% 100%, 0 100%); border-bottom: 2px solid var(--red); min-width: 260px; }
+.lamp { width: 10px; height: 10px; background: var(--ice); box-shadow: 0 0 8px rgba(191,230,236,.6); }
+.lamp.busy { background: var(--red); box-shadow: 0 0 10px var(--red-glow); animation: blink .8s steps(2) infinite; }
+.lamp.err { background: var(--red); }
+@keyframes blink { 50% { opacity: .2; } }
+
+/* ---------------- build view */
+.view { flex: 1; min-height: 0; display: none; }
+.view.on { display: grid; }
+#build { grid-template-columns: 380px minmax(0, 1fr) 330px; gap: 8px; }
+.col { display: flex; flex-direction: column; min-height: 0; }
+.col > .frame { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.scroll { overflow: auto; padding: 12px 14px 16px; flex: 1; min-height: 0; }
+.colhead { padding: 10px 14px 8px; border-bottom: 1px solid var(--rule); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+
+/* builder */
+.preset { display: flex; gap: 6px; margin-bottom: 10px; }
+.preset select { flex: 1; }
+select, input[type=text], input[type=number] { background: var(--panel3); border: 1px solid var(--ice-deep); padding: 5px 7px; outline: none; border-radius: 0; }
+select:focus, input:focus { border-color: var(--ice); }
+.sec { margin: 10px 0 4px; }
+.sec summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.sec summary::-webkit-details-marker { display: none; }
+.sec summary::before { content: "▸"; color: var(--red); transition: transform .15s; }
+.sec[open] summary::before { transform: rotate(90deg); }
+.sec summary .flag { margin-left: auto; font-size: 10px; letter-spacing: .14em; }
+.flag.fail { color: var(--red); } .flag.warn { color: var(--amber); } .flag.pass { color: var(--ice-dim); }
+.field { display: grid; grid-template-columns: 1fr 86px; gap: 2px 8px; align-items: center; margin: 8px 0; }
+.field label { color: var(--text); font-size: 12px; }
+.field .hint { grid-column: 1 / -1; color: var(--muted); font-size: 11px; line-height: 1.35; }
+.field input[type=number] { width: 86px; text-align: right; }
+.field input[type=range] { grid-column: 1 / -1; }
+.field.wide { grid-template-columns: 1fr; }
+.field.wide select { width: 100%; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 14px; cursor: pointer;
+  background: repeating-linear-gradient(90deg, var(--ice-deep) 0 1px, transparent 1px 10px), linear-gradient(var(--panel3), var(--panel3)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 8px; height: 18px; background: var(--red); box-shadow: 0 0 6px var(--red-glow); }
+input[type=range]::-moz-range-thumb { width: 8px; height: 18px; background: var(--red); border: 0; border-radius: 0; }
+.seg { display: flex; gap: 4px; }
+.seg button { background: var(--panel3); border: 1px solid var(--ice-deep); padding: 4px 14px; cursor: pointer; }
+.seg button.on { background: var(--ice); color: #0a0d10; border-color: var(--ice); }
+
+/* review */
+.verdict { padding: 10px 14px; margin-bottom: 10px; border-left: 4px solid var(--ice); background: var(--panel2); }
+.verdict b { font: 700 16px var(--disp); letter-spacing: .2em; }
+.verdict.fail { border-left-color: var(--red); background: linear-gradient(90deg, rgba(226,56,44,.16), var(--panel2) 70%); }
+.verdict.fail b { color: var(--red); }
+.verdict.warn { border-left-color: var(--amber); }
+.verdict.warn b { color: var(--amber); }
+.verdict.pass b { color: var(--ice); }
+.verdict .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+.stat { background: var(--panel2); padding: 7px 10px; border-top: 2px solid var(--ice-deep); }
+.stat .v { font: 700 17px var(--disp); color: var(--ice); }
+.stat .v small { font: 11px var(--mono); color: var(--muted); }
+#schem { width: 100%; height: 230px; display: block; background: #0a0c0e; margin-bottom: 10px; }
+.checks { margin-bottom: 12px; }
+.chk { display: grid; grid-template-columns: 52px 1fr auto; gap: 8px; padding: 5px 8px; border-bottom: 1px dashed #1f262c; align-items: baseline; }
+.chk .tag { font-size: 10.5px; letter-spacing: .14em; }
+.chk .tag.pass { color: var(--ice-dim); } .chk .tag.warn { color: var(--amber); } .chk .tag.fail { color: var(--red); }
+.chk .val { color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+.chk .why { grid-column: 2 / -1; color: #b9c4c7; font-size: 11.5px; }
+.chk.fail { background: rgba(226,56,44,.07); }
+.cat { margin: 12px 0 2px; }
+.massbar { display: flex; height: 16px; margin: 6px 0 8px; gap: 2px; }
+.massbar div { height: 100%; }
+.masslist { display: grid; grid-template-columns: 1fr auto auto; gap: 2px 12px; font-size: 12px; }
+.masslist .sw { display: inline-block; width: 9px; height: 9px; margin-right: 6px; }
+table.soil { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.soil th, table.soil td { padding: 5px 4px; border-bottom: 1px solid var(--rule); text-align: right; }
+table.soil th:first-child, table.soil td:first-child { text-align: left; }
+table.soil th { color: var(--ice-dim); font-weight: 400; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; }
+.slopebar { display: inline-block; height: 6px; background: var(--ice); vertical-align: middle; margin-left: 6px; }
+.err { color: var(--red); padding: 10px; border: 1px solid var(--red-dim); background: rgba(226,56,44,.08); margin-bottom: 10px; }
+
+/* launch */
+.mission { padding: 9px 12px; margin-bottom: 6px; background: var(--panel2); cursor: pointer; border-left: 3px solid transparent; }
+.mission:hover { background: var(--panel3); }
+.mission.on { border-left-color: var(--red); background: var(--panel3); }
+.mission b { font: 700 13px var(--disp); letter-spacing: .1em; text-transform: uppercase; }
+.mission .d { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.mission .tags { margin-top: 5px; display: flex; gap: 6px; flex-wrap: wrap; }
+.mission .tags span { font-size: 10px; letter-spacing: .12em; border: 1px solid var(--ice-deep); padding: 0 5px; color: var(--ice-dim); }
+.mission .tags span.storm { color: var(--red); border-color: var(--red-dim); }
+.row { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
+.row > * { flex: 1; }
+#launch { width: 100%; margin-top: 12px; background: var(--red); color: #0a0d10; border: 0; padding: 14px; cursor: pointer;
+  font: 700 16px var(--disp); letter-spacing: .32em; clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); box-shadow: 0 0 18px var(--red-glow); }
+#launch:disabled { opacity: .5; cursor: wait; }
+.btn { background: var(--panel3); border: 1px solid var(--ice-deep); padding: 6px 10px; cursor: pointer; letter-spacing: .12em; font-size: 11px; text-transform: uppercase; color: var(--ice); }
+.btn:hover { border-color: var(--ice); }
+.note { color: var(--muted); font-size: 11.5px; margin-top: 8px; }
+.note.red { color: var(--red); }
+#runs .r { padding: 6px 8px; background: var(--panel2); margin-top: 4px; cursor: pointer; font-size: 11.5px; display: flex; justify-content: space-between; gap: 8px; }
+#runs .r:hover { background: var(--panel3); }
+#runs .r .s { color: var(--ice); } #runs .r .s.dead { color: var(--red); }
+
+/* replay view */
+#replay { grid-template-rows: auto 1fr; gap: 8px; }
+.resbar { display: flex; align-items: center; gap: 16px; padding: 9px 14px; flex-wrap: wrap; }
+.resbar .big { font: 700 24px/1 var(--disp); color: var(--red); text-shadow: 0 0 12px var(--red-glow); }
+.resbar .msg { flex: 1; min-width: 300px; font-size: 12.5px; }
+.resbar .msg .k { letter-spacing: .14em; }
+#frame { width: 100%; height: 100%; border: 0; background: var(--void); }
+
+/* code view */
+#code { grid-template-columns: minmax(0, 1fr) 380px; gap: 8px; }
+.editor { display: flex; flex: 1; min-height: 0; background: #0a0c0e; font: 13px/1.55 var(--mono); }
+.gutter { padding: 10px 8px 10px 10px; text-align: right; color: #45535a; user-select: none; overflow: hidden; white-space: pre; min-width: 46px; border-right: 1px solid var(--rule); }
+.gutter .bad { color: #0a0d10; background: var(--red); }
+#src { flex: 1; resize: none; border: 0; outline: none; background: transparent; color: #dbe7ea; padding: 10px 12px; font: inherit; white-space: pre; overflow: auto; tab-size: 4; caret-color: var(--red); }
+#src::selection { background: rgba(63,127,217,.4); }
+.codehead { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.codehead select { min-width: 160px; }
+#clog { background: #0a0c0e; border-left: 2px solid var(--ice-deep); padding: 8px 10px; white-space: pre-wrap; font-size: 11.5px; max-height: 300px; overflow: auto; color: #c8d3d6; margin: 8px 0; }
+#clog.ok { border-left-color: var(--ice); } #clog.bad { border-left-color: var(--red); }
+#clog .e { color: var(--red); cursor: pointer; } #clog .w { color: var(--amber); cursor: pointer; }
+.cheat { font-size: 11.5px; color: #b9c4c7; }
+.cheat code { color: var(--ice); }
+.cheat dt { color: var(--ice-dim); letter-spacing: .14em; font-size: 10.5px; text-transform: uppercase; margin-top: 10px; }
+.cheat dd { margin: 2px 0 0; }
+.btn.primary { background: var(--red); color: #0a0d10; border-color: var(--red); font-weight: 700; }
+
+/* overlay */
+#overlay { position: fixed; inset: 0; background: rgba(7,8,10,.82); display: none; align-items: center; justify-content: center; z-index: 5; }
+#overlay.on { display: flex; }
+#overlay .box { padding: 28px 40px; background: var(--panel); text-align: center; min-width: 380px; }
+#overlay .bar { height: 10px; margin: 16px 0 10px; background: repeating-linear-gradient(90deg, var(--red) 0 10px, transparent 10px 16px); background-size: 32px 10px; animation: march .6s linear infinite; }
+@keyframes march { to { background-position: 32px 0; } }
+
+@media (max-width: 1180px) {
+  body { height: auto; }
+  #build, #code { grid-template-columns: 1fr; }
+  #code .editor { height: 70vh; }
+  .col > .frame { max-height: none; }
+  #replay { height: 92vh; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">AXIMETRY <small>△▽△ MISSION CONTROL</small></div>
+  <div class="nav"><button id="tab-build" class="on">BUILD</button><button id="tab-code">CODE</button><button id="tab-replay" disabled>REPLAY</button></div>
+  <div class="status"><span class="lamp" id="lamp"></span><span id="statustext">CONNECTING…</span></div>
+</header>
+
+<section class="view on" id="build">
+  <!-- builder -->
+  <div class="col"><div class="frame chamfer">
+    <div class="colhead"><h3>Rover builder</h3><span class="lbl" id="dirty"></span></div>
+    <div class="scroll" id="builder">
+      <div class="lbl">Start from a design</div>
+      <div class="preset"><select id="preset"></select></div>
+      <div class="field wide"><label for="f-name">Design name</label><input type="text" id="f-name"></div>
+      <div id="sections"></div>
+    </div>
+  </div></div>
+
+  <!-- review -->
+  <div class="col"><div class="frame chamfer">
+    <div class="colhead"><h3>Engineering review</h3><span class="lbl" id="envlabel"></span></div>
+    <div class="scroll" id="review"><div class="note">Loading…</div></div>
+  </div></div>
+
+  <!-- launch -->
+  <div class="col"><div class="frame chamfer">
+    <div class="colhead"><h3>Launch</h3></div>
+    <div class="scroll">
+      <div class="lbl">Mission</div>
+      <div id="missions" style="margin-top:6px"></div>
+      <div class="lbl" style="margin-top:12px">Controller (the code driving the rover) · <a href="#" id="editcode" style="color:var(--red)">write your own ▸</a></div>
+      <div class="row"><select id="controller"></select></div>
+      <div class="note" id="ctldesc"></div>
+      <div class="row">
+        <div><div class="lbl">Terrain seed</div><input type="number" id="seed" placeholder="mission default" style="width:100%"></div>
+        <div style="flex:0 0 auto;align-self:flex-end"><button class="btn" id="randseed" title="New random map">Random</button></div>
+      </div>
+      <button id="launch">LAUNCH ▶</button>
+      <div class="note" id="launchnote"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="save">Save design</button>
+        <button class="btn" id="export">Export JSON</button>
+      </div>
+      <div class="note" id="savenote"></div>
+      <div class="lbl" style="margin-top:14px">Recent launches</div>
+      <div id="runs"><div class="note">None yet.</div></div>
+    </div>
+  </div></div>
+</section>
+
+<section class="view" id="code">
+  <div class="col"><div class="frame chamfer">
+    <div class="colhead">
+      <div class="codehead">
+        <h3>Controller code</h3>
+        <select id="codefile"></select>
+        <button class="btn" id="newfile">+ New file</button>
+      </div>
+      <span class="lbl" id="codedirty"></span>
+    </div>
+    <div class="editor"><div class="gutter" id="gutter">1</div><textarea id="src" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea></div>
+  </div></div>
+  <div class="col"><div class="frame chamfer">
+    <div class="colhead"><h3>Compile &amp; run</h3></div>
+    <div class="scroll">
+      <div class="row"><button class="btn" id="compile">Compile <span style="color:var(--muted)">(Ctrl+S)</span></button><button class="btn primary" id="compilelaunch">Compile &amp; launch ▶</button></div>
+      <div class="note" id="codetarget"></div>
+      <div id="clog">Press Compile to check your code. Files live in <b>my_controllers/</b> in your project folder.</div>
+      <dl class="cheat">
+        <dt>How it works</dt>
+        <dd>Your class gets <code>on_start(brief)</code> once, then <code>on_step(obs)</code> 5 times a second. Return a <code>Command</code>. You never see the rover's true position, only noisy sensors.</dd>
+        <dt>Drive</dt>
+        <dd><code>c.drive(speed_m_s, turn_rad_s, brief_.rover)</code> · or set <code>c.wheel_speed_left/right</code> in rad/s. Rovers are slow: ~0.04 m/s.</dd>
+        <dt>Sensors in obs</dt>
+        <dd><code>wheel_angle_left/right</code> (encoders), <code>gyro_z</code>, <code>pitch</code>, <code>roll</code>, <code>sun_heading</code> (daytime), <code>landmarks</code> (range+bearing to known boulders), <code>vo_dx/vo_dy</code> (visual odometry), <code>hazards</code> (21 rays ahead), <code>battery_soc</code>, <code>box_temp_c</code>, <code>sun_elevation</code>, <code>relay_in_view</code>, <code>events</code></dd>
+        <dt>Science</dt>
+        <dd>Park within 1.5 m of a target and set <code>c.sample_target = id</code> for 4 minutes. Then <code>c.transmit = true</code> during a relay pass. Points count only once data reaches Earth.</dd>
+        <dt>Survive</dt>
+        <dd><code>c.sleep_s = 1800</code> sleeps 30 min (do it at night). If the battery dies, heaters stop and it may freeze.</dd>
+        <dt>Debug</dt>
+        <dd><code>c.log = "..."</code> appears in the replay's LOG tab · <code>c.status</code> in the HUD · <code>c.has_estimate, est_x, est_y</code> draws your position estimate · <code>c.planned_path</code> draws your plan.</dd>
+        <dt>Full reference</dt>
+        <dd><code>include/aximetry/controller.hpp</code> and <code>docs/writing_a_controller.md</code>. The rover, mission and seed come from the BUILD tab.</dd>
+      </dl>
+    </div>
+  </div></div>
+</section>
+
+<section class="view" id="replay">
+  <div class="frame chamfer resbar">
+    <span class="lbl">score</span><span class="big" id="r-score">0</span>
+    <div class="msg" id="r-msg"></div>
+    <button class="btn" id="r-back">◀ Back to builder</button>
+    <button class="btn" id="r-outcome">What happened ★</button>
+    <button class="btn" id="r-newtab">Open in new tab</button>
+    <button class="btn" id="r-download">Download run</button>
+  </div>
+  <iframe id="frame" class="chamfer" title="Mission replay"></iframe>
+</section>
+
+<div id="overlay"><div class="box chamfer">
+  <h3>SIMULATING MISSION</h3>
+  <div class="bar"></div>
+  <div class="lbl" id="ov-text">terramechanics · 10 Hz · six wheels</div>
+  <div class="note" id="ov-time">0 s</div>
+</div></div>
+
+<script>
+(() => {
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const C = { ice: "#bfe6ec", iceDim: "#6f9aa1", iceDeep: "#2b4246", red: "#e2382c", amber: "#e8a33a", blue: "#3f7fd9", grey: "#8d969c" };
+
+let CAT = null, design = null, report = null, mission = null, lastRun = null;
+const runs = [];
+
+// ---------------------------------------------------------------- schema
+// [section, key in rover JSON, fields]. Field types: num (slider), seg, material, motor, battery.
+const SCHEMA = [
+  { title: "Wheels", key: "wheels", match: ["Wheel rim", "Rock strike"], fields: [
+    { k: "count", label: "Wheel count", type: "seg", options: [4, 6], hint: "6 wheels = rocker-bogie, climbs rocks one wheel diameter tall; 4 = half that." },
+    { k: "material", label: "Wheel material", type: "material" },
+    { k: "diameter_m", label: "Diameter", min: 0.08, max: 0.6, step: 0.01, unit: "m", hint: "Bigger wheels sink less and climb taller rocks." },
+    { k: "width_m", label: "Width", min: 0.04, max: 0.4, step: 0.01, unit: "m", hint: "Wider wheels spread the load: less sinkage in soft sand." },
+    { k: "rim_thickness_mm", label: "Rim thickness", min: 0.5, max: 10, step: 0.1, unit: "mm" },
+    { k: "spokes", label: "Spokes", min: 3, max: 16, step: 1, unit: "" , hint: "More spokes = shorter unsupported rim spans." },
+    { k: "grouser_height_mm", label: "Grouser height", min: 0, max: 20, step: 1, unit: "mm", hint: "Cleats that bite into soil for traction." },
+  ]},
+  { title: "Body", key: "body", match: ["Body box", "Belly clearance"], fields: [
+    { k: "material", label: "Body material", type: "material" },
+    { k: "wall_thickness_mm", label: "Wall thickness", min: 0.5, max: 10, step: 0.1, unit: "mm" },
+    { k: "length_m", label: "Length", min: 0.3, max: 2, step: 0.05, unit: "m" },
+    { k: "width_m", label: "Width", min: 0.2, max: 1.5, step: 0.05, unit: "m" },
+    { k: "height_m", label: "Height", min: 0.1, max: 0.8, step: 0.01, unit: "m" },
+    { k: "ground_clearance_m", label: "Ground clearance", min: 0.05, max: 0.6, step: 0.01, unit: "m", hint: "Too low and rocks high-centre the rover. Too high raises the centre of gravity." },
+  ]},
+  { title: "Suspension", key: "suspension", match: ["Suspension strut", "tip-over"], fields: [
+    { k: "material", label: "Strut material", type: "material" },
+    { k: "strut_diameter_mm", label: "Strut tube diameter", min: 8, max: 100, step: 1, unit: "mm", hint: "Bending stiffness grows with diameter⁴." },
+    { k: "strut_wall_mm", label: "Strut wall", min: 0.5, max: 10, step: 0.1, unit: "mm" },
+    { k: "strut_length_m", label: "Strut length", min: 0.1, max: 0.8, step: 0.01, unit: "m", hint: "Longer legs buckle more easily (Euler: ∝ 1/L²)." },
+    { k: "track_width_m", label: "Track width", min: 0.3, max: 2.5, step: 0.02, unit: "m", hint: "Wider stance = harder to roll over sideways." },
+    { k: "wheelbase_m", label: "Wheelbase", min: 0.3, max: 2.5, step: 0.02, unit: "m" },
+  ]},
+  { title: "Drive", key: "drive", match: ["Motor torque"], fields: [
+    { k: "motor", label: "Drive motors (one per wheel)", type: "motor" },
+  ]},
+  { title: "Power", key: "power", match: ["Battery covers", "Solar energy"], fields: [
+    { k: "battery", label: "Battery chemistry", type: "battery" },
+    { k: "battery_wh", label: "Battery capacity", min: 20, max: 3000, step: 10, unit: "Wh" },
+    { k: "solar_area_m2", label: "Solar array area", min: 0.05, max: 4, step: 0.05, unit: "m²" },
+    { k: "solar_efficiency", label: "Solar cell efficiency", min: 0.1, max: 0.35, step: 0.01, unit: "" },
+    { k: "avionics_awake_w", label: "Avionics, awake", min: 2, max: 60, step: 1, unit: "W" },
+    { k: "avionics_sleep_w", label: "Avionics, asleep", min: 0.2, max: 15, step: 0.1, unit: "W" },
+    { k: "sensors_w", label: "Cameras + sensors", min: 0.5, max: 20, step: 0.5, unit: "W" },
+  ]},
+  { title: "Thermal", key: "thermal", match: ["Heaters can hold", "freeze risk", "embrittlement"], fields: [
+    { k: "rhu_count", label: "Radioisotope heater units", min: 0, max: 20, step: 1, unit: "× 1 W", hint: "Always-on 1 W heaters. Free warmth, even when the battery is flat." },
+    { k: "box_conductance_w_per_k", label: "Insulation heat leak", min: 0.02, max: 1.5, step: 0.01, unit: "W/K", hint: "Lower = better insulated warm box." },
+    { k: "heater_max_w", label: "Electric heater power", min: 0, max: 100, step: 1, unit: "W" },
+    { k: "thermostat_c", label: "Thermostat set point", min: -40, max: 20, step: 1, unit: "°C" },
+  ]},
+  { title: "Payload", key: "payload", match: ["Can stand on Earth"], fields: [
+    { k: "instruments_kg", label: "Science instruments", min: 0, max: 80, step: 0.5, unit: "kg" },
+    { k: "avionics_kg", label: "Avionics + computers", min: 1, max: 80, step: 0.5, unit: "kg" },
+  ]},
+];
+
+// ---------------------------------------------------------------- api
+async function api(path, body) {
+  const res = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
+  const data = await res.json().catch(() => ({ error: "bad response from server" }));
+  if (!res.ok || data.error) { const err = new Error(data.error || res.statusText); err.data = data; throw err; }
+  return data;
+}
+function setStatus(text, mode) {
+  $("statustext").textContent = text;
+  $("lamp").className = "lamp" + (mode ? " " + mode : "");
+}
+
+// ---------------------------------------------------------------- builder
+function optionLabel(type, item) {
+  if (type === "material") return `${item.name}`;
+  if (type === "motor") return `${item.name} · ${item.stall_torque} N·m · ${item.mass} kg`;
+  return `${item.name}`;
+}
+function itemInfo(type, id) {
+  if (type === "material") {
+    const m = CAT.materials.find((x) => x.id === id); if (!m) return "";
+    return `ρ ${m.density} kg/m³ · strength ${m.yield_mpa} MPa · stiffness ${m.youngs_gpa} GPa · brittle below ${m.brittle_below_c == null ? "never" : m.brittle_below_c + " °C"}<br>${esc(m.note)}`;
+  }
+  if (type === "motor") {
+    const m = CAT.motors.find((x) => x.id === id); if (!m) return "";
+    return `stall torque ${m.stall_torque} N·m at the wheel · top speed ${m.no_load_speed} rad/s · ${m.mass} kg each`;
+  }
+  const b = CAT.batteries.find((x) => x.id === id); if (!b) return "";
+  return `${b.wh_per_kg} Wh/kg · works down to ${b.min_discharge_c} °C · charges above ${b.min_charge_c} °C · dies below ${b.survival_c} °C<br>${esc(b.note)}`;
+}
+function listFor(type) { return type === "material" ? CAT.materials : type === "motor" ? CAT.motors : CAT.batteries; }
+
+function buildForm() {
+  const host = $("sections"); host.innerHTML = "";
+  for (const sec of SCHEMA) {
+    const d = document.createElement("details"); d.className = "sec"; d.open = sec.key === "wheels" || sec.key === "power";
+    d.innerHTML = `<summary><h3>${sec.title}</h3><span class="flag" data-flag="${sec.key}"></span></summary>`;
+    for (const f of sec.fields) {
+      const id = `f-${sec.key}-${f.k}`;
+      const w = document.createElement("div");
+      if (f.type === "seg") {
+        w.className = "field";
+        w.innerHTML = `<label>${f.label}</label><div class="seg" id="${id}">${f.options.map((o) => `<button data-v="${o}">${o}</button>`).join("")}</div>` + (f.hint ? `<div class="hint">${f.hint}</div>` : "");
+        w.querySelectorAll("button").forEach((b) => b.onclick = () => { design[sec.key][f.k] = +b.dataset.v; syncForm(); changed(); });
+      } else if (f.type) {
+        w.className = "field wide";
+        w.innerHTML = `<label for="${id}">${f.label}</label><select id="${id}">${listFor(f.type).map((x) => `<option value="${x.id}">${esc(optionLabel(f.type, x))}</option>`).join("")}</select><div class="hint" id="${id}-info"></div>`;
+        w.querySelector("select").onchange = (e) => { design[sec.key][f.k] = e.target.value; syncForm(); changed(); };
+      } else {
+        w.className = "field";
+        w.innerHTML = `<label for="${id}-n">${f.label}${f.unit ? ` <span style="color:var(--muted)">[${f.unit}]</span>` : ""}</label>
+          <input type="number" id="${id}-n" min="${f.min}" max="${f.max}" step="${f.step}">
+          <input type="range" id="${id}" min="${f.min}" max="${f.max}" step="${f.step}" aria-label="${f.label}">` + (f.hint ? `<div class="hint">${f.hint}</div>` : "");
+        const set = (v) => { v = Number(v); if (!Number.isFinite(v)) return; design[sec.key][f.k] = v; syncForm(); changed(); };
+        w.querySelector('input[type=range]').oninput = (e) => set(e.target.value);
+        w.querySelector('input[type=number]').onchange = (e) => set(e.target.value);
+      }
+      d.appendChild(w);
+    }
+    host.appendChild(d);
+  }
+  $("f-name").oninput = (e) => { design.name = e.target.value; changed(true); };
+}
+
+function syncForm() {
+  $("f-name").value = design.name || "";
+  for (const sec of SCHEMA) for (const f of sec.fields) {
+    const id = `f-${sec.key}-${f.k}`, v = design[sec.key][f.k];
+    if (f.type === "seg") $(id).querySelectorAll("button").forEach((b) => b.classList.toggle("on", +b.dataset.v === v));
+    else if (f.type) { $(id).value = v; $(id + "-info").innerHTML = itemInfo(f.type, v); }
+    else { $(id).value = v; const n = $(id + "-n"); if (document.activeElement !== n) n.value = +Number(v).toFixed(3); }
+  }
+}
+
+function loadPreset(file) {
+  const p = CAT.rovers.find((r) => r.file === file);
+  if (!p) return;
+  design = JSON.parse(JSON.stringify(p.design));
+  syncForm(); $("dirty").textContent = ""; refreshCheck();
+}
+
+let checkTimer = null, checkSeq = 0;
+function changed(nameOnly) {
+  $("dirty").textContent = "● modified";
+  if (!nameOnly) { clearTimeout(checkTimer); checkTimer = setTimeout(refreshCheck, 140); }
+}
+
+async function refreshCheck() {
+  const seq = ++checkSeq;
+  try {
+    const r = await api("/api/check", { rover: design, mission: mission ? mission.file : null });
+    if (seq !== checkSeq) return;
+    report = r; renderReview();
+  } catch (e) {
+    if (seq !== checkSeq) return;
+    report = null;
+    $("review").innerHTML = `<div class="err">Design rejected: ${esc(e.message)}</div>`;
+    updateLaunchNote();
+  }
+}
+
+// ---------------------------------------------------------------- review
+const MASS_COL = [C.ice, C.blue, C.iceDim, C.red, C.amber, "#8fb3d9", "#d97a6e", "#5c8a91", "#b6a06a", C.grey];
+function fmt(v, d = 1) { return Number(v).toFixed(d); }
+
+function renderReview() {
+  const r = report;
+  const vClass = r.fails ? "fail" : r.warns ? "warn" : "pass";
+  const sub = r.fails ? `${r.fails} check${r.fails > 1 ? "s" : ""} failed, ${r.warns} warning${r.warns === 1 ? "" : "s"}. You can still launch it to see what happens.`
+                      : r.warns ? `${r.warns} warning${r.warns > 1 ? "s" : ""}. It should work, with risks.` : "All checks pass with margin.";
+  let html = `<div class="verdict ${vClass}"><b>${r.verdict}</b><div class="sub">${sub}</div></div>`;
+  const stat = (k, v, u) => `<div class="stat"><div class="lbl">${k}</div><div class="v">${v} <small>${u}</small></div></div>`;
+  html += `<div class="stats">
+    ${stat("Mass", fmt(r.mass_kg), "kg")}${stat("Weight on Mars", fmt(r.weight_mars_n, 0), "N")}
+    ${stat("Top speed", fmt(r.top_speed_cm_s), "cm/s")}${stat("Climbs rocks", fmt(r.climb_limit_cm, 0), "cm")}
+    ${stat("Tips over at", fmt(Math.min(r.tip_lateral_deg, r.tip_longitudinal_deg), 0), "°")}${stat("Solar / sol", fmt(r.solar_wh_per_sol, 0), "Wh")}
+    ${stat("Night needs", fmt(r.night_energy_wh, 0), "Wh")}${stat("Usable battery (cold)", fmt(r.usable_battery_wh, 0), "Wh")}
+  </div><canvas id="schem"></canvas>`;
+
+  // checks grouped by category
+  let cat = "";
+  html += `<div class="checks">`;
+  for (const c of r.checks) {
+    if (c.category !== cat) { cat = c.category; html += `<div class="lbl cat">${esc(cat)}</div>`; }
+    const unit = c.unit === "SF" ? "safety factor" : c.unit;
+    html += `<div class="chk ${c.verdict}"><span class="tag ${c.verdict}">${c.verdict.toUpperCase()}</span><span>${esc(c.name)}</span>
+      <span class="val">${fmt(c.value, 2)} ${esc(unit)} · need ${fmt(c.limit, 2)}</span>${c.verdict !== "pass" ? `<span class="why">${esc(c.why)}</span>` : ""}</div>`;
+  }
+  html += `</div>`;
+
+  // mass budget
+  const total = r.mass_kg;
+  html += `<div class="lbl">Mass budget</div><div class="massbar">${r.mass_breakdown.map((m, i) => `<div title="${esc(m.item)} ${fmt(m.kg)} kg" style="flex:${m.kg};background:${MASS_COL[i % MASS_COL.length]}"></div>`).join("")}</div>
+    <div class="masslist">${r.mass_breakdown.map((m, i) => `<span><i class="sw" style="background:${MASS_COL[i % MASS_COL.length]}"></i>${esc(m.item)}</span><span>${fmt(m.kg, 2)} kg</span><span style="color:var(--muted)">${fmt(100 * m.kg / total, 0)}%</span>`).join("")}</div>`;
+
+  // soils
+  const sl = (s) => s < 0 ? `<span style="color:var(--red)">stuck</span>` : `${fmt(100 * s, 0)}%`;
+  html += `<div class="lbl" style="margin-top:14px">Soil trafficability</div><table class="soil"><tr><th>soil</th><th>sinks</th><th>slip flat</th><th>slip 10°</th><th>max slope</th></tr>
+    ${r.soils.map((s) => `<tr><td>${esc(s.name)}</td><td>${fmt(s.sinkage_cm)} cm</td><td>${sl(s.slip_flat)}</td><td>${sl(s.slip_10deg)}</td><td>${fmt(s.max_slope_deg, 0)}°<span class="slopebar" style="width:${s.max_slope_deg * 1.4}px;background:${s.max_slope_deg < 8 ? C.red : C.ice}"></span></td></tr>`).join("")}</table>
+    <div class="note">Max slope = steepest climb at ≤ 60% wheel slip. Coldest night air this mission: ${fmt(r.night_min_temp_c, 0)} °C.</div>`;
+  $("review").innerHTML = html;
+  drawSchematic();
+  updateFlags();
+  updateLaunchNote();
+}
+
+function sectionStatus(sec) {
+  let worst = "pass";
+  for (const c of report.checks) if (sec.match.some((m) => c.name.includes(m))) {
+    if (c.verdict === "fail") worst = "fail"; else if (c.verdict === "warn" && worst !== "fail") worst = "warn";
+  }
+  return worst;
+}
+function updateFlags() {
+  for (const sec of SCHEMA) {
+    const el = document.querySelector(`[data-flag="${sec.key}"]`);
+    const s = sectionStatus(sec);
+    el.className = "flag " + s; el.textContent = s === "pass" ? "OK" : s.toUpperCase();
+  }
+}
+
+// top view + side view, line art; failing parts drawn red
+function drawSchematic() {
+  const cv = $("schem"); if (!cv) return;
+  const dpr = window.devicePixelRatio || 1, rect = cv.getBoundingClientRect();
+  cv.width = rect.width * dpr; cv.height = rect.height * dpr;
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = rect.width, H = rect.height, d = design;
+  const st = Object.fromEntries(SCHEMA.map((s) => [s.key, sectionStatus(s)]));
+  const col = (k) => st[k] === "fail" ? C.red : st[k] === "warn" ? C.amber : C.ice;
+
+  g.strokeStyle = "rgba(63,127,217,.15)"; g.lineWidth = 1;
+  for (let x = 0; x < W; x += 16) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  g.fillStyle = C.iceDim; g.font = "10px 'Share Tech Mono', monospace";
+  g.fillText("TOP VIEW", 10, 14); g.fillText("SIDE VIEW", W / 2 + 10, 14);
+
+  const L = Math.max(d.suspension.wheelbase_m + d.wheels.diameter_m, d.body.length_m) + 0.2;
+  const Wd = Math.max(d.suspension.track_width_m + d.wheels.width_m, d.body.width_m) + 0.2;
+  const half = W / 2;
+  // ---- top view
+  const s1 = Math.min((half - 30) / L, (H - 40) / Wd);
+  const cx = half / 2, cy = H / 2 + 6;
+  const P = (x, y) => [cx + x * s1, cy - y * s1];
+  // solar array (dashed), same aspect as body
+  const asp = d.body.length_m / d.body.width_m, sa = d.power.solar_area_m2;
+  const sl = Math.sqrt(sa * asp), sw = sa / sl;
+  g.setLineDash([4, 3]); g.strokeStyle = C.blue; g.lineWidth = 1;
+  g.strokeRect(cx - sl / 2 * s1, cy - sw / 2 * s1, sl * s1, sw * s1); g.setLineDash([]);
+  // body
+  g.strokeStyle = col("body"); g.lineWidth = 1.6;
+  g.strokeRect(cx - d.body.length_m / 2 * s1, cy - d.body.width_m / 2 * s1, d.body.length_m * s1, d.body.width_m * s1);
+  // struts + wheels
+  const axles = report.axle_x;
+  for (const ax of axles) for (const side of [1, -1]) {
+    const y = side * d.suspension.track_width_m / 2;
+    const [wx, wy] = P(ax, y);
+    g.strokeStyle = col("suspension"); g.lineWidth = Math.max(1, d.suspension.strut_diameter_mm / 1000 * s1);
+    g.beginPath(); g.moveTo(...P(ax * 0.6, side * d.body.width_m / 2)); g.lineTo(wx, wy); g.stroke();
+    g.strokeStyle = col("wheels"); g.lineWidth = 1.6;
+    g.fillStyle = "#07080a";
+    g.fillRect(wx - d.wheels.diameter_m / 2 * s1, wy - d.wheels.width_m / 2 * s1, d.wheels.diameter_m * s1, d.wheels.width_m * s1);
+    g.strokeRect(wx - d.wheels.diameter_m / 2 * s1, wy - d.wheels.width_m / 2 * s1, d.wheels.diameter_m * s1, d.wheels.width_m * s1);
+  }
+  // heading arrow
+  g.fillStyle = C.red; const [ax0, ay0] = P(d.body.length_m / 2 + 0.06, 0);
+  g.beginPath(); g.moveTo(ax0 + 10, ay0); g.lineTo(ax0, ay0 - 5); g.lineTo(ax0, ay0 + 5); g.fill();
+  // dims
+  g.fillStyle = C.iceDim;
+  g.fillText(`track ${fmt(d.suspension.track_width_m, 2)} m`, 10, H - 20);
+  g.fillText(`wheelbase ${fmt(d.suspension.wheelbase_m, 2)} m`, 10, H - 8);
+
+  // ---- side view
+  const Hs = d.body.ground_clearance_m + d.body.height_m + 0.15;
+  const s2 = Math.min((half - 40) / L, (H - 50) / Hs);
+  const gx = half + half / 2, gy = H - 26;
+  const Q = (x, z) => [gx + x * s2, gy - z * s2];
+  g.strokeStyle = C.iceDim; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(half + 10, gy); g.lineTo(W - 10, gy); g.stroke();
+  for (let x = half + 14; x < W - 10; x += 8) { g.beginPath(); g.moveTo(x, gy); g.lineTo(x - 5, gy + 5); g.stroke(); }
+  const R = d.wheels.diameter_m / 2;
+  // rock it can climb, in front
+  const rock = report.climb_limit_cm / 100;
+  const [rx, ry] = Q(L / 2 + 0.05, 0);
+  g.fillStyle = "rgba(226,56,44,.25)"; g.strokeStyle = C.red;
+  g.beginPath(); g.moveTo(rx - 4, gy); g.lineTo(rx, gy - rock * s2); g.lineTo(rx + rock * s2 * 0.9, gy - rock * s2 * 0.7); g.lineTo(rx + rock * s2 * 1.2, gy); g.closePath(); g.fill(); g.stroke();
+  // body
+  const [bx, by] = Q(-d.body.length_m / 2, d.body.ground_clearance_m + d.body.height_m);
+  g.strokeStyle = col("body"); g.lineWidth = 1.6; g.strokeRect(bx, by, d.body.length_m * s2, d.body.height_m * s2);
+  // solar deck
+  g.strokeStyle = C.blue; g.beginPath(); g.moveTo(...Q(-sl / 2, d.body.ground_clearance_m + d.body.height_m + 0.03)); g.lineTo(...Q(sl / 2, d.body.ground_clearance_m + d.body.height_m + 0.03)); g.stroke();
+  for (const ax of axles) {
+    const [wx, wy] = Q(ax, R);
+    g.strokeStyle = col("suspension"); g.lineWidth = 1.4;
+    g.beginPath(); g.moveTo(wx, wy); g.lineTo(...Q(ax * 0.6, d.body.ground_clearance_m)); g.stroke();
+    g.strokeStyle = col("wheels"); g.lineWidth = 1.6; g.fillStyle = "#07080a";
+    g.beginPath(); g.arc(wx, wy, R * s2, 0, 6.283); g.fill(); g.stroke();
+    g.beginPath(); g.arc(wx, wy, 2, 0, 6.283); g.stroke();
+  }
+  // CG
+  const [cgx, cgy] = Q(0, report.cg_height_m);
+  g.strokeStyle = C.red; g.lineWidth = 1.2; g.beginPath(); g.arc(cgx, cgy, 5, 0, 6.283); g.stroke();
+  g.beginPath(); g.moveTo(cgx - 8, cgy); g.lineTo(cgx + 8, cgy); g.moveTo(cgx, cgy - 8); g.lineTo(cgx, cgy + 8); g.stroke();
+  g.fillStyle = C.red; g.fillText("CG", cgx + 8, cgy - 6);
+  g.fillStyle = C.iceDim;
+  g.fillText(`clearance ${fmt(d.body.ground_clearance_m * 100, 0)} cm · climbs ${fmt(report.climb_limit_cm, 0)} cm`, half + 10, H - 8);
+}
+
+// ---------------------------------------------------------------- launch
+function renderMissions() {
+  $("missions").innerHTML = CAT.missions.map((m) => `<div class="mission" data-f="${m.file}"><b>${esc(m.name)}</b><div class="d">${esc(m.description)}</div>
+    <div class="tags"><span>${m.sols} SOL${m.sols === 1 ? "" : "S"}</span><span>${m.size_m} M MAP</span><span>${m.targets} TARGETS</span>${m.has_goal ? "<span>GOAL</span>" : ""}${m.storm ? '<span class="storm">DUST STORM</span>' : ""}</div></div>`).join("");
+  $("missions").querySelectorAll(".mission").forEach((el) => el.onclick = () => selectMission(el.dataset.f));
+}
+function selectMission(file) {
+  mission = CAT.missions.find((m) => m.file === file);
+  $("missions").querySelectorAll(".mission").forEach((el) => el.classList.toggle("on", el.dataset.f === file));
+  $("envlabel").textContent = mission ? `conditions: ${mission.name}` : "";
+  $("seed").placeholder = mission ? `default (${mission.seed})` : "mission default";
+  refreshCheck();
+}
+function updateLaunchNote() {
+  const n = $("launchnote");
+  if (!report) { n.className = "note red"; n.textContent = "Fix the design error before launching."; $("launch").disabled = true; return; }
+  $("launch").disabled = false;
+  if (report.fails) { n.className = "note red"; n.textContent = `This design fails ${report.fails} check${report.fails > 1 ? "s" : ""}. Launch anyway to watch it fail.`; }
+  else { n.className = "note"; n.textContent = mission ? `Long missions take up to ~30 s to simulate.` : ""; }
+}
+
+async function launch() {
+  if (!mission || !report) return;
+  const seedVal = $("seed").value.trim();
+  const ctl = $("controller").value;
+  const body = { rover: design, mission: mission.file, controller: ctl };
+  if (ctl.startsWith("code:")) {
+    body.code_file = ctl.slice(5);
+    if (codeDirty && codeFile === body.code_file) { const c = await compileCode(); if (!c || !c.ok) { showTab("code"); return; } }
+  }
+  if (seedVal !== "") body.seed = Number(seedVal);
+  $("overlay").classList.add("on"); $("launch").disabled = true;
+  setStatus("SIMULATING…", "busy");
+  const t0 = performance.now();
+  $("ov-text").textContent = `${design.name} → ${mission.name}`;
+  const timer = setInterval(() => { $("ov-time").textContent = `${((performance.now() - t0) / 1000).toFixed(0)} s`; }, 250);
+  try {
+    const r = await api("/api/run", body);
+    r.rover = design.name; r.mission = mission.name; r.controller = ctl.startsWith("code:") ? ctl.slice(5) : ctl;
+    runs.unshift(r); renderRuns(); showReplay(r, true);
+    setStatus("READY");
+  } catch (e) {
+    setStatus("RUN FAILED", "err");
+    $("launchnote").className = "note red"; $("launchnote").textContent = `Simulation error: ${e.message}`;
+    if (e.data && e.data.compile_log) { showTab("code"); showCompileLog({ ok: false, log: e.data.compile_log }); }
+    else if (e.data && e.data.run_log !== undefined) {
+      showTab("code"); $("clog").className = "bad";
+      $("clog").textContent = `${e.message}\n\n${e.data.run_log || "(no output)"}\n\nTip: an endless loop in on_step is stopped after 3 minutes.`;
+    }
+  } finally {
+    clearInterval(timer); $("overlay").classList.remove("on"); $("launch").disabled = false;
+  }
+}
+
+function renderRuns() {
+  $("runs").innerHTML = runs.map((r, i) => `<div class="r" data-i="${i}"><span>${esc(r.rover)} → ${esc(r.mission)}</span><span class="s ${r.failed ? "dead" : ""}">${r.failed ? "LOST" : fmt(r.score, 0)}</span></div>`).join("");
+  $("runs").querySelectorAll(".r").forEach((el) => el.onclick = () => showReplay(runs[+el.dataset.i]));
+}
+
+function showReplay(r, fresh) {
+  lastRun = r;
+  $("tab-replay").disabled = false;
+  $("r-score").textContent = fmt(r.score, 0);
+  $("r-msg").innerHTML = r.failed
+    ? `<span class="k" style="color:var(--red)">▼ ROVER LOST</span> ${esc(r.failure)}<br><span style="color:var(--muted)">${esc(r.lesson)}</span>`
+    : `<span class="k" style="color:var(--ice)">▲ ROVER NOMINAL</span> ${r.received} of ${r.measured} measurements reached Earth · goal ${r.goal_reached ? "reached" : "not reached"} · drove ${fmt(r.distance_m, 0)} m · ${fmt(r.sols, 2)} sols in ${fmt(r.wall_time_s)} s`;
+  // A fresh launch opens with the outcome cutscene; older runs open straight to the map.
+  $("frame").onload = () => { if (fresh) { try { $("frame").contentWindow.AXIMETRY_showOutcome(); } catch (e) { /* viewer too old */ } } };
+  $("frame").src = `/replay/${r.id}`;
+  showTab("replay");
+}
+
+function showTab(t) {
+  for (const v of ["build", "code", "replay"]) { $(v).classList.toggle("on", t === v); $("tab-" + v).classList.toggle("on", t === v); }
+  if (t === "code") { fillCodeFiles(); if (!codeFile) openCodeFile((CODE.files[0] && CODE.files[0].file) || "my_rover.cpp"); }
+  if (t === "build") requestAnimationFrame(drawSchematic);
+}
+
+
+// ---------------------------------------------------------------- controllers list
+let CODE = { files: [], compiler_ok: false, problem: "" };
+async function loadCodeList() {
+  try { CODE = await api("/api/code/list"); } catch (e) { CODE = { files: [], compiler_ok: false, problem: e.message }; }
+}
+function fillControllers(selected) {
+  const builtin = CAT.controllers.map((c) => `<option value="${c.name}">${esc(c.name)}</option>`).join("");
+  const mine = CODE.files.map((f) => `<option value="code:${f.file}">✎ ${esc(f.file)}${f.controller ? "" : " (no register line)"}</option>`).join("");
+  $("controller").innerHTML = `<optgroup label="Built in">${builtin}</optgroup><optgroup label="Your code (CODE tab)">${mine}</optgroup>`;
+  if (selected && [...$("controller").options].some((o) => o.value === selected)) $("controller").value = selected;
+  ctlDesc();
+}
+function ctlDesc() {
+  const v = $("controller").value;
+  if (v.startsWith("code:")) {
+    $("ctldesc").innerHTML = `Your code in <b>my_controllers/${esc(v.slice(5))}</b>. It compiles automatically when you launch.` +
+      (CODE.compiler_ok ? "" : `<br><span style="color:var(--red)">${esc(CODE.problem)}</span>`);
+    return;
+  }
+  const c = CAT.controllers.find((x) => x.name === v); $("ctldesc").textContent = c ? c.description : "";
+}
+
+// ---------------------------------------------------------------- code editor
+let codeFile = null, codeDirty = false;
+function updateGutter(errLines) {
+  const n = $("src").value.split("\n").length;
+  const bad = new Set(errLines || []);
+  let out = "";
+  for (let i = 1; i <= n; i++) out += bad.has(i) ? `<span class="bad">${i}</span>\n` : i + "\n";
+  $("gutter").innerHTML = out;
+  $("gutter").scrollTop = $("src").scrollTop;
+}
+async function openCodeFile(file) {
+  if (codeDirty && codeFile && !confirm(`Discard unsaved changes to ${codeFile}?`)) { $("codefile").value = codeFile; return; }
+  const r = await api(`/api/code/load?file=${encodeURIComponent(file)}`);
+  codeFile = r.file; $("src").value = r.code; codeDirty = false; $("codedirty").textContent = "";
+  updateGutter(); fillCodeFiles();
+  $("clog").className = ""; $("clog").textContent = `Editing my_controllers/${file}. Compile to check it.`;
+}
+function fillCodeFiles() {
+  const files = CODE.files.map((f) => f.file);
+  if (codeFile && !files.includes(codeFile)) files.push(codeFile);
+  $("codefile").innerHTML = files.map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join("");
+  if (codeFile) $("codefile").value = codeFile;
+  $("codetarget").innerHTML = mission ? `Launch uses <b>${esc(design ? design.name : "")}</b> on <b>${esc(mission.name)}</b> (change them in BUILD).` : "";
+}
+function showCompileLog(r) {
+  const el = $("clog");
+  el.className = r.ok ? "ok" : "bad";
+  const lines = [];
+  const html = esc(r.log || "").split("\n").map((line) => {
+    const m = /my_controllers\/[\w.-]+:(\d+):(\d+): (error|warning|fatal error)/.exec(line);
+    if (!m) return line;
+    if (m[3] !== "warning") lines.push(+m[1]);
+    return `<span class="${m[3] === "warning" ? "w" : "e"}" data-line="${m[1]}">${line}</span>`;
+  }).join("\n");
+  el.innerHTML = (r.ok ? `<b style="color:var(--ice)">✓ COMPILED</b>${r.seconds ? ` in ${r.seconds.toFixed(1)} s` : ""} · controller "${esc(r.controller)}"\n\n` : `<b style="color:var(--red)">✗ DID NOT COMPILE</b>\n\n`) + html;
+  el.querySelectorAll("[data-line]").forEach((s) => s.onclick = () => gotoLine(+s.dataset.line));
+  updateGutter(lines);
+}
+function gotoLine(n) {
+  const ta = $("src"), lines = ta.value.split("\n");
+  let pos = 0; for (let i = 0; i < n - 1 && i < lines.length; i++) pos += lines[i].length + 1;
+  ta.focus(); ta.setSelectionRange(pos, pos + (lines[n - 1] || "").length);
+  ta.scrollTop = Math.max(0, (n - 6) * 20.15);
+}
+async function compileCode() {
+  if (!codeFile) return null;
+  $("clog").className = ""; $("clog").textContent = "Compiling…"; setStatus("COMPILING…", "busy");
+  try {
+    const r = await api("/api/code/compile", { file: codeFile, code: $("src").value });
+    codeDirty = false; $("codedirty").textContent = "saved";
+    showCompileLog(r);
+    await loadCodeList(); fillCodeFiles(); fillControllers($("controller").value);
+    setStatus(r.ok ? "COMPILED" : "COMPILE ERRORS", r.ok ? "" : "err");
+    return r;
+  } catch (e) {
+    $("clog").className = "bad"; $("clog").textContent = e.message; setStatus("ERROR", "err"); return null;
+  }
+}
+async function compileAndLaunch() {
+  const r = await compileCode();
+  if (!r || !r.ok) return;
+  fillControllers("code:" + codeFile);
+  $("controller").value = "code:" + codeFile; ctlDesc();
+  launch();
+}
+function setupEditor() {
+  const ta = $("src");
+  ta.addEventListener("scroll", () => { $("gutter").scrollTop = ta.scrollTop; });
+  ta.addEventListener("input", () => { codeDirty = true; $("codedirty").textContent = "● unsaved"; updateGutter(); });
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const s0 = ta.selectionStart, s1 = ta.selectionEnd;
+      ta.value = ta.value.slice(0, s0) + "    " + ta.value.slice(s1);
+      ta.selectionStart = ta.selectionEnd = s0 + 4; ta.dispatchEvent(new Event("input"));
+    } else if (e.key === "Enter") {
+      // keep the current line's indentation
+      e.preventDefault();
+      const s0 = ta.selectionStart, before = ta.value.slice(0, s0);
+      const indent = (/(^|\n)([ \t]*)[^\n]*$/.exec(before) || [])[2] || "";
+      const extra = /\{\s*$/.test(before) ? "    " : "";
+      const ins = "\n" + indent + extra;
+      ta.value = before + ins + ta.value.slice(ta.selectionEnd);
+      ta.selectionStart = ta.selectionEnd = s0 + ins.length; ta.dispatchEvent(new Event("input"));
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      e.preventDefault(); compileCode();
+    }
+  });
+  $("compile").onclick = compileCode;
+  $("compilelaunch").onclick = compileAndLaunch;
+  $("codefile").onchange = (e) => openCodeFile(e.target.value);
+  $("newfile").onclick = () => {
+    let name = prompt("New controller file name (letters, numbers, _):", "my_rover_v2");
+    if (!name) return;
+    name = name.trim().replace(/\.cpp$/i, "").replace(/[^A-Za-z0-9_-]/g, "_");
+    if (!name) return;
+    openCodeFile(name + ".cpp");
+  };
+}
+
+// ---------------------------------------------------------------- save / export
+async function save() {
+  try {
+    const r = await api("/api/save", { rover: design });
+    $("savenote").className = "note"; $("savenote").textContent = `Saved to rovers/${r.file}`;
+    const cat = await api("/api/catalog"); CAT.rovers = cat.rovers; fillPresets(r.file);
+    $("dirty").textContent = "";
+  } catch (e) { $("savenote").className = "note red"; $("savenote").textContent = e.message; }
+}
+function exportJson() {
+  const blob = new Blob([JSON.stringify(design, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = (design.name || "rover").toLowerCase().replace(/[^a-z0-9]+/g, "_") + ".json"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function fillPresets(selected) {
+  $("preset").innerHTML = CAT.rovers.map((r) => `<option value="${r.file}">${esc(r.design.name)}  ·  ${r.file}</option>`).join("");
+  if (selected) $("preset").value = selected;
+}
+
+// ---------------------------------------------------------------- boot
+async function boot() {
+  try {
+    CAT = await api("/api/catalog");
+  } catch (e) {
+    setStatus("NO LINK TO SIMULATOR", "err");
+    $("review").innerHTML = `<div class="err">Cannot reach the Aximetry program. Start it with <b>aximetry.exe</b> (or <code>aximetry gui</code>) and keep its window open.<br><br>${esc(e.message)}</div>`;
+    return;
+  }
+  buildForm();
+  fillPresets();
+  $("preset").onchange = (e) => loadPreset(e.target.value);
+  await loadCodeList();
+  fillControllers("reference");
+  $("controller").onchange = ctlDesc; ctlDesc();
+  renderMissions();
+  const start = CAT.rovers.find((r) => r.file === "mer_class.json") || CAT.rovers[0];
+  fillPresets(start.file);
+  design = JSON.parse(JSON.stringify(start.design));
+  syncForm();
+  selectMission((CAT.missions.find((m) => m.file.startsWith("01")) || CAT.missions[0]).file);
+  $("launch").onclick = launch;
+  $("randseed").onclick = () => { $("seed").value = Math.floor(Math.random() * 100000); };
+  $("save").onclick = save;
+  $("export").onclick = exportJson;
+  $("tab-build").onclick = () => showTab("build");
+  $("tab-code").onclick = () => showTab("code");
+  $("editcode").onclick = (e) => { e.preventDefault(); showTab("code"); };
+  setupEditor();
+  $("tab-replay").onclick = () => { if (lastRun) showTab("replay"); };
+  $("r-back").onclick = () => showTab("build");
+  $("r-outcome").onclick = () => { try { $("frame").contentWindow.AXIMETRY_showOutcome(); } catch (e) { /* ignore */ } };
+  $("r-newtab").onclick = () => lastRun && window.open(`/replay/${lastRun.id}`, "_blank");
+  $("r-download").onclick = () => { if (lastRun) location.href = `/replay/${lastRun.id}.json`; };
+  window.addEventListener("resize", () => drawSchematic());
+  setStatus(`READY · ${CAT.rovers.length} DESIGNS · ${CAT.missions.length} MISSIONS`);
+}
+window.addEventListener("beforeunload", (e) => { if (codeDirty) { e.preventDefault(); e.returnValue = ""; } });
+boot();
+})();
+</script>
+</body>
+</html>

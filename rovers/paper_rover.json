@@ -1,0 +1,14 @@
+// What if we built it out of cardboard?
+// Same geometry as the MER-class rover, every structural part in paper.
+// Light, cheap... and see what `aximetry check` says about the wheels.
+{
+  "name": "Cardboard rover",
+  "description": "MER-class geometry, every structural part made of corrugated cardboard.",
+  "wheels": { "count": 6, "diameter_m": 0.26, "width_m": 0.16, "rim_thickness_mm": 3.0, "grouser_height_mm": 8, "spokes": 6, "material": "paper" },
+  "body": { "length_m": 1.1, "width_m": 0.8, "height_m": 0.35, "wall_thickness_mm": 4.0, "ground_clearance_m": 0.30, "material": "paper" },
+  "suspension": { "material": "paper", "strut_diameter_mm": 40, "strut_wall_mm": 2.0, "strut_length_m": 0.35, "track_width_m": 1.22, "wheelbase_m": 1.41 },
+  "drive": { "motor": "bldc_m" },
+  "power": { "battery": "li_ion", "battery_wh": 600, "solar_area_m2": 1.3 },
+  "thermal": { "rhu_count": 8, "box_conductance_w_per_k": 0.35, "heater_max_w": 40, "thermostat_c": -15 },
+  "payload": { "instruments_kg": 30, "avionics_kg": 45 }
+}

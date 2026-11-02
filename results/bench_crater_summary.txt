@@ -1,0 +1,5 @@
+reference        mean score 436.0 over 8 seeds, 0 failures
+ablate_landmarks mean score 92.4 over 8 seeds, 0 failures
+ablate_vo        mean score 455.2 over 8 seeds, 0 failures
+ablate_value     mean score 454.4 over 8 seeds, 0 failures
+simple_drive     mean score 0.0 over 8 seeds, 0 failures

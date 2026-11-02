@@ -1,0 +1,33 @@
+// Mission 2 — Crater Rim Science.
+// A 50 m crater with a drift-filled floor. Orbit has flagged a dozen targets,
+// but orbital mineral labels are wrong about a third of the time. Two sols to
+// collect the most science value and get it home through the relay orbiter.
+// On sol 2 the science team uplinks a priority change: it arrives one light-time
+// later, and only when an orbiter is overhead.
+{
+  "name": "02 Crater Rim Science",
+  "description": "Prospect a crater rim for high-value targets. Science counts only once it reaches Earth.",
+  "seed": 202,
+  "duration_sols": 2.0,
+  "terrain": {
+    "size_m": 160, "resolution_m": 0.5,
+    "relief_m": 2.0, "feature_m": 28,
+    "craters": [ { "x": 95, "y": 90, "radius": 25, "depth": 5 } ],
+    "random_craters": 4,
+    "drift_fraction": 0.10, "crust_fraction": 0.18,
+    "rock_density_per_m2": 0.04, "boulder_fraction": 0.04
+  },
+  "science": {
+    "random_targets": 12,
+    "orbital_misclassification": 0.35,
+    "fixed_targets": [ { "x": 95, "y": 84, "kind": "silica" } ]
+  },
+  "environment": { "latitude_deg": -4.6, "ls_deg": 150, "tau": 0.5, "temp_mean_c": -55, "temp_amplitude_c": 33 },
+  "start": { "x": 25, "y": 30, "heading_deg": 45, "local_hour": 9.2, "battery_soc": 0.9 },
+  "comms": {
+    "owlt_min": 14,
+    "relay_passes": [ { "local_hour": 15.5, "minutes": 12, "rate_kbps": 2000 }, { "local_hour": 3.5, "minutes": 10, "rate_kbps": 2000 } ],
+    "uplinks": [ { "send_at_s": 85000, "type": "priority", "target": 3, "value": 0.95,
+                   "text": "Science team: target 3 shows a hydration signature in new orbital data. High priority." } ]
+  }
+}

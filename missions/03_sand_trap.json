@@ -1,0 +1,32 @@
+// Mission 3 — Sand Trap.
+// Reach the far side of a dune field. A band of loose drift sits between you
+// and the goal; on flat ground it is slow, on slopes it can swallow the rover.
+// In 2009 Spirit became embedded in soft soil at a site called Troy and never
+// drove again. Plan around the sand or cross it carefully.
+{
+  "name": "03 Sand Trap",
+  "description": "Cross a dune field to reach the goal 110 m away without getting embedded.",
+  "seed": 303,
+  "duration_sols": 1.5,
+  "terrain": {
+    "size_m": 140, "resolution_m": 0.5,
+    "relief_m": 3.0, "feature_m": 22,
+    "random_craters": 2,
+    "drift_fraction": 0.18, "crust_fraction": 0.10,
+    "rock_density_per_m2": 0.02, "boulder_fraction": 0.05,
+    "soil_patches": [
+      { "x": 60, "y": 60, "radius": 14, "soil": "loose_drift" },
+      { "x": 75, "y": 45, "radius": 12, "soil": "loose_drift" },
+      { "x": 45, "y": 78, "radius": 12, "soil": "loose_drift" },
+      { "x": 88, "y": 88, "radius": 10, "soil": "loose_drift" }
+    ]
+  },
+  "science": { "random_targets": 4, "orbital_misclassification": 0.3 },
+  "environment": { "latitude_deg": -14.6, "ls_deg": 80, "tau": 0.6, "temp_mean_c": -60, "temp_amplitude_c": 35 },
+  "start": { "x": 20, "y": 20, "heading_deg": 45, "local_hour": 9.0, "battery_soc": 0.9 },
+  "goal": { "x": 115, "y": 115, "radius": 4, "bonus": 300 },
+  "comms": {
+    "owlt_min": 10,
+    "relay_passes": [ { "local_hour": 15.0, "minutes": 12, "rate_kbps": 2000 }, { "local_hour": 4.0, "minutes": 10, "rate_kbps": 2000 } ]
+  }
+}

@@ -1,0 +1,14 @@
+// A microrover in the spirit of Sojourner (Mars Pathfinder, 1997): about 11 kg,
+// six small wheels, a tiny solar panel. Light enough to float over soft soil,
+// but slow, and the small battery makes nights tight.
+{
+  "name": "Mini microrover",
+  "description": "Sojourner-scale six-wheel microrover in aluminium.",
+  "wheels": { "count": 6, "diameter_m": 0.13, "width_m": 0.07, "rim_thickness_mm": 1.2, "grouser_height_mm": 5, "spokes": 6, "material": "al7075" },
+  "body": { "length_m": 0.40, "width_m": 0.30, "height_m": 0.15, "wall_thickness_mm": 1.0, "ground_clearance_m": 0.13, "material": "al7075" },
+  "suspension": { "material": "al7075", "strut_diameter_mm": 12, "strut_wall_mm": 1.0, "strut_length_m": 0.15, "track_width_m": 0.48, "wheelbase_m": 0.50 },
+  "drive": { "motor": "bldc_s" },
+  "power": { "battery": "li_ion", "battery_wh": 80, "solar_area_m2": 0.22, "avionics_awake_w": 5, "avionics_sleep_w": 0.8, "sensors_w": 1.5 },
+  "thermal": { "rhu_count": 3, "box_conductance_w_per_k": 0.05, "heater_max_w": 6, "thermostat_c": -20 },
+  "payload": { "instruments_kg": 1.0, "avionics_kg": 2.0 }
+}

@@ -1,0 +1,13 @@
+// A 3D-printed hobby rover scaled up for Mars. PLA is fine in the lab, but it
+// is brittle in the cold and far too soft for load-bearing rims.
+{
+  "name": "3D-printed PLA",
+  "description": "Small four-wheel rover printed in PLA, hobby motors.",
+  "wheels": { "count": 4, "diameter_m": 0.20, "width_m": 0.10, "rim_thickness_mm": 4.0, "grouser_height_mm": 6, "spokes": 6, "material": "pla" },
+  "body": { "length_m": 0.6, "width_m": 0.45, "height_m": 0.25, "wall_thickness_mm": 4.0, "ground_clearance_m": 0.12, "material": "pla" },
+  "suspension": { "material": "pla", "strut_diameter_mm": 25, "strut_wall_mm": 3.0, "strut_length_m": 0.15, "track_width_m": 0.6, "wheelbase_m": 0.6 },
+  "drive": { "motor": "bldc_s" },
+  "power": { "battery": "li_ion", "battery_wh": 150, "solar_area_m2": 0.35, "avionics_awake_w": 8, "avionics_sleep_w": 1.5, "sensors_w": 3 },
+  "thermal": { "rhu_count": 0, "box_conductance_w_per_k": 0.15, "heater_max_w": 15, "thermostat_c": -15 },
+  "payload": { "instruments_kg": 4, "avionics_kg": 5 }
+}

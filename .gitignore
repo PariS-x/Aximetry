@@ -1,0 +1,8 @@
+# build output (includes the GUI's compiled controllers in build/user_runners)
+build/
+# replay pages and run files you generate in the project folder
+/*.html
+/*.json
+results/*.json
+*.json.tmp
+.DS_Store
