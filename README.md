@@ -12,9 +12,6 @@ relay orbiter, all from noisy sensors.
 
 ![Mission replay](docs/figures/replay.png)
 
-> **Demo:** open [`docs/demo.html`](docs/demo.html) in a browser for a full replay of the crater mission.
-> Publishing guide (GitHub, CI): [docs/PUBLISHING.md](docs/PUBLISHING.md).
-
 It is two things at once:
 
 * **A teaching sandbox.** Build a rover out of cardboard, carbon steel or PLA and
